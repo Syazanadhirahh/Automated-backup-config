@@ -1,0 +1,214 @@
+{% extends 'network_scanner/base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="space-y-6">
+  <div class="bg-gradient-to-r from-yellow-400 to-yellow-300 rounded-xl p-6 sm:p-8 text-black shadow">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold">{{ device.ip_address }}</h1>
+        {% if device.hostname %}
+          <p class="mt-2 text-yellow-800">{{ device.hostname }}</p>
+        {% endif %}
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if device.status == 'online' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+          {{ device.status|title }}
+        </span>
+        <form method="post" action="{% url 'network_scanner:backup_device_config' device.id %}" class="inline">
+          {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg">
+          <i class="ti ti-device-floppy mr-2"></i>
+          Backup Now
+        </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+    <div class="space-y-2">
+      {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Device Information -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Device Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Basic Details</h3>
+        <dl class="space-y-2">
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">IP Address:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ device.ip_address }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Hostname:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ device.hostname|default:"Unknown" }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Status:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ device.status|title }}</dd>
+          </div>
+        </dl>
+      </div>
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Last Activity</h3>
+        <dl class="space-y-2">
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Last Scanned:</dt>
+            <dd class="text-sm font-medium text-slate-900">
+              {% if device.last_scanned_at %}
+                {{ device.last_scanned_at|date:"M d, Y H:i" }}
+              {% else %}
+                Never
+              {% endif %}
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Configurations:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ device.configs.count }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Active Configs:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ active_configs_count }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Configuration History -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-slate-900">Configuration History</h2>
+      <a href="{% url 'admin:network_scanner_networkconfig_changelist' %}?device__id__exact={{ device.id }}" class="text-yellow-500 hover:text-yellow-600 text-sm">View All</a>
+    </div>
+    
+    {% if configs %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Version</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Backup Date</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-200">
+            {% for config in configs %}
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{{ config.config_type }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ config.version }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ config.backup_timestamp|date:"M d, Y H:i" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if config.is_active %}bg-green-100 text-green-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {% if config.is_active %}Active{% else %}Inactive{% endif %}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  <button onclick="viewConfig('{{ config.id }}')" class="text-yellow-500 hover:text-yellow-600 mr-2">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                  <button onclick="downloadConfig('{{ config.id }}')" class="text-yellow-500 hover:text-yellow-600">
+                    <i class="ti ti-download"></i>
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-8 text-slate-500">
+        <i class="ti ti-device-floppy text-4xl mb-2"></i>
+        <p>No configurations found for this device</p>
+        <form method="post" action="{% url 'network_scanner:backup_device_config' device.id %}" class="mt-4">
+          {% csrf_token %}
+        <button type="submit" class="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg">
+          Create First Backup
+        </button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Actions -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Actions</h2>
+    <div class="flex flex-wrap gap-3">
+      <form method="post" action="{% url 'network_scanner:backup_device_config' device.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg">
+          <i class="ti ti-device-floppy mr-2"></i>
+          Backup Configuration
+        </button>
+      </form>
+      <a href="{% url 'admin:network_scanner_device_change' device.id %}" class="inline-flex items-center px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-sm font-medium rounded-lg">
+        <i class="ti ti-edit mr-2"></i>
+        Edit Device
+      </a>
+      <a href="{% url 'network_scanner:network_configs' %}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg">
+        <i class="ti ti-arrow-left mr-2"></i>
+        Back to Devices
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Configuration Modal -->
+<div id="configModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+  <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-medium text-slate-900">Configuration Details</h3>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600">
+          <i class="ti ti-x text-xl"></i>
+        </button>
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-2">Configuration Data:</label>
+        <pre id="configData" class="bg-slate-100 p-4 rounded-lg text-sm overflow-auto max-h-96 whitespace-pre-wrap"></pre>
+      </div>
+      <div class="flex justify-end">
+        <button onclick="closeConfigModal()" class="px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-sm font-medium rounded-lg">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function viewConfig(configId) {
+  // This would typically fetch the config data via AJAX
+  // For now, we'll show a placeholder
+  document.getElementById('configData').textContent = `# Configuration for {{ device.ip_address }}\n# This is a placeholder - implement actual config retrieval\n# Config ID: ${configId}`;
+  document.getElementById('configModal').classList.remove('hidden');
+}
+
+function closeConfigModal() {
+  document.getElementById('configModal').classList.add('hidden');
+}
+
+function downloadConfig(configId) {
+  // This would typically download the config file
+  alert('Downloading configuration... This feature would be implemented with proper file download endpoints.');
+}
+
+// Close modal when clicking outside
+document.getElementById('configModal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    closeConfigModal();
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,216 @@
+{% extends 'network_scanner/base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="space-y-6">
+  <div class="bg-gradient-to-r from-yellow-400 to-yellow-300 rounded-xl p-6 sm:p-8 text-black shadow">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold">{{ config.name }}</h1>
+        <p class="mt-2 text-yellow-800">{{ config.backup_type|title }} backup • {{ config.frequency|title }}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if config.enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+          {% if config.enabled %}Enabled{% else %}Disabled{% endif %}
+        </span>
+        <form method="post" action="{% url 'network_scanner:toggle_backup_config' config.id %}" class="inline">
+          {% csrf_token %}
+          <button type="submit" class="px-4 py-2 rounded-lg {% if config.enabled %}bg-red-500 hover:bg-red-600{% else %}bg-green-500 hover:bg-green-600{% endif %} text-white text-sm font-medium">
+            {% if config.enabled %}Disable{% else %}Enable{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  {% if messages %}
+    <div class="space-y-2">
+      {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Configuration Details -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Configuration Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Basic Settings</h3>
+        <dl class="space-y-2">
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Name:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ config.name }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Type:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ config.backup_type|title }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Frequency:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ config.frequency|title }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Max Backups:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ config.max_backups }}</dd>
+          </div>
+        </dl>
+      </div>
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Backup Options</h3>
+        <dl class="space-y-2">
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Include Database:</dt>
+            <dd class="text-sm font-medium text-slate-900">
+              <i class="ti ti-{% if config.include_database %}check text-green-500{% else %}x text-red-500{% endif %}"></i>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Include Media:</dt>
+            <dd class="text-sm font-medium text-slate-900">
+              <i class="ti ti-{% if config.include_media %}check text-green-500{% else %}x text-red-500{% endif %}"></i>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Include Logs:</dt>
+            <dd class="text-sm font-medium text-slate-900">
+              <i class="ti ti-{% if config.include_logs %}check text-green-500{% else %}x text-red-500{% endif %}"></i>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-sm text-slate-600">Backup Path:</dt>
+            <dd class="text-sm font-medium text-slate-900">{{ config.backup_path }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timing Information -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Timing Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Last Backup</h3>
+        {% if config.last_backup_at %}
+          <p class="text-lg font-semibold text-slate-900">{{ config.last_backup_at|date:"F d, Y H:i" }}</p>
+          <p class="text-sm text-slate-500">{{ config.last_backup_at|timesince }} ago</p>
+        {% else %}
+          <p class="text-lg font-semibold text-slate-500">Never</p>
+        {% endif %}
+      </div>
+      <div>
+        <h3 class="text-sm font-medium text-slate-500 mb-2">Next Backup</h3>
+        {% if config.next_backup_at %}
+          <p class="text-lg font-semibold text-slate-900">{{ config.next_backup_at|date:"F d, Y H:i" }}</p>
+          <p class="text-sm text-slate-500">in {{ config.next_backup_at|timeuntil }}</p>
+        {% else %}
+          <p class="text-lg font-semibold text-slate-500">Not scheduled</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Actions</h2>
+    <div class="flex flex-wrap gap-3">
+      <form method="post" action="{% url 'network_scanner:run_backup_now' config.id %}" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="inline-flex items-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-black text-sm font-medium rounded-lg">
+          <i class="ti ti-play mr-2"></i>
+          Run Backup Now
+        </button>
+      </form>
+      <a href="{% url 'admin:network_scanner_backupconfig_change' config.id %}" class="inline-flex items-center px-4 py-2 bg-slate-500 hover:bg-slate-600 text-white text-sm font-medium rounded-lg">
+        <i class="ti ti-edit mr-2"></i>
+        Edit Configuration
+      </a>
+      <a href="{% url 'network_scanner:backup_dashboard' %}" class="inline-flex items-center px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg">
+        <i class="ti ti-arrow-left mr-2"></i>
+        Back to Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Backup History -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-slate-900">Backup History</h2>
+      <a href="{% url 'admin:network_scanner_backuphistory_changelist' %}?config__id__exact={{ config.id }}" class="text-yellow-500 hover:text-yellow-600 text-sm">View All</a>
+    </div>
+    
+    {% if backups %}
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Started</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Duration</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Size</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-slate-200">
+            {% for backup in backups %}
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                    {% if backup.status == 'completed' %}bg-green-100 text-green-800
+                    {% elif backup.status == 'failed' %}bg-red-100 text-red-800
+                    {% elif backup.status == 'running' %}bg-blue-100 text-blue-800
+                    {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                    {{ backup.status|title }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ backup.started_at|date:"M d, Y H:i" }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {% if backup.duration %}
+                    {{ backup.duration.total_seconds|floatformat:1 }}s
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {% if backup.file_size %}
+                    {{ backup.file_size|filesizeformat }}
+                  {% else %}
+                    -
+                  {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                  {% if backup.status == 'completed' and backup.file_path %}
+                    <a href="{% url 'network_scanner:backup_download' backup.id %}" class="text-yellow-500 hover:text-yellow-600">
+                      <i class="ti ti-download"></i>
+                    </a>
+                  {% endif %}
+                  {% if backup.error_message %}
+                    <button onclick="showError('{{ backup.error_message|escapejs }}')" class="text-red-500 hover:text-red-600 ml-2">
+                      <i class="ti ti-alert-circle"></i>
+                    </button>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="text-center py-8 text-slate-500">
+        <i class="ti ti-history text-4xl mb-2"></i>
+        <p>No backups found for this configuration</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+function showError(message) {
+  alert('Error: ' + message);
+}
+</script>
+{% endblock %}
