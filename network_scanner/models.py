@@ -52,6 +52,7 @@ class BackupConfig(models.Model):
     backup_type = models.CharField(max_length=10, choices=BACKUP_TYPES, default='config')
     frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES, default='daily')
     enabled = models.BooleanField(default=True)
+    auto_push_enabled = models.BooleanField(default=False, help_text="Enable automatic push of backups to remote location")
     max_backups = models.PositiveIntegerField(default=30, help_text="Maximum number of backups to keep")
     retention_months = models.PositiveIntegerField(default=6, help_text="Number of months to keep individual backups before archiving")
     archive_old_backups = models.BooleanField(default=True, help_text="Archive old backups instead of deleting them")

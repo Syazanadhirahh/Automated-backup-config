@@ -9,7 +9,7 @@
         <h1 class="text-2xl sm:text-3xl font-bold">{{ config.name }}</h1>
         <p class="mt-2 text-yellow-800">{{ config.backup_type|title }} backup • {{ config.frequency|title }}</p>
       </div>
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3">  
         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {% if config.enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
           {% if config.enabled %}Enabled{% else %}Disabled{% endif %}
         </span>

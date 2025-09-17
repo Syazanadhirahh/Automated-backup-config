@@ -15,6 +15,7 @@ urlpatterns = [
     path("backup/config/<int:config_id>/", views.backup_config_detail, name="backup_config_detail"),
     path("backup/config/<int:config_id>/run/", views.run_backup_now, name="run_backup_now"),
     path("backup/config/<int:config_id>/toggle/", views.toggle_backup_config, name="toggle_backup_config"),
+    path("backup/config/<int:config_id>/toggle-auto-push/", views.toggle_auto_push, name="toggle_auto_push"),
     path("backup/download/<int:backup_id>/", views.backup_download, name="backup_download"),
     path("backup/status/", views.backup_status_api, name="backup_status_api"),
     

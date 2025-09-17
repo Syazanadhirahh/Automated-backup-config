@@ -99,6 +99,20 @@ def toggle_backup_config(request, config_id):
 
 
 @login_required
+@require_POST
+def toggle_auto_push(request, config_id):
+    """Toggle auto push feature on/off"""
+    config = get_object_or_404(BackupConfig, id=config_id)
+    config.auto_push_enabled = not config.auto_push_enabled
+    config.save()
+    
+    status = "enabled" if config.auto_push_enabled else "disabled"
+    messages.success(request, f'Auto push feature {status}')
+    
+    return redirect('network_scanner:backup_dashboard')
+
+
+@login_required
 def backup_download(request, backup_id):
     """Download backup file"""
     backup = get_object_or_404(BackupHistory, id=backup_id)
@@ -134,11 +148,13 @@ def device_config_detail(request, device_id):
     device = get_object_or_404(Device, id=device_id)
     configs = device.configs.order_by('-backup_timestamp')
     active_configs_count = device.configs.filter(is_active=True).count()
+    backup_configs = BackupConfig.objects.all()
     
     context = {
         'device': device,
         'configs': configs,
         'active_configs_count': active_configs_count,
+        'backup_configs': backup_configs,
     }
     return render(request, "network_scanner/device_config_detail.html", context)
 

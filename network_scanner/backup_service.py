@@ -83,6 +83,10 @@ class BackupService:
             config.schedule_next_backup()
             config.save()
             
+            # Auto push if enabled
+            if config.auto_push_enabled:
+                self._auto_push_backup(archive_path, config)
+            
             # Cleanup old backups
             self._cleanup_old_backups(config)
             
@@ -427,6 +431,33 @@ class BackupService:
             })
         
         return status
+    
+    def _auto_push_backup(self, archive_path, config):
+        """Auto push backup to remote location if enabled"""
+        try:
+            # This is a placeholder implementation
+            # In a real implementation, you would push to:
+            # - Cloud storage (AWS S3, Google Cloud Storage, etc.)
+            # - FTP/SFTP server
+            # - Network share
+            # - Git repository
+            # - etc.
+            
+            print(f"Auto pushing backup {archive_path} for config {config.name}")
+            
+            # Example implementation for demonstration:
+            # You could add configuration fields for:
+            # - Remote server details
+            # - Authentication credentials
+            # - Push destination path
+            # - Push method (FTP, SCP, cloud API, etc.)
+            
+            # For now, just log that auto push would happen
+            print(f"Backup {archive_path} would be pushed to remote location for {config.name}")
+            
+        except Exception as e:
+            print(f"Error auto pushing backup for {config.name}: {e}")
+            # Don't raise the exception to avoid breaking the backup process
 
 
 # Global backup service instance
