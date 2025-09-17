@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Device, BackupConfig, BackupHistory, NetworkConfig
+from .models import Device, BackupConfig, BackupHistory, NetworkConfig, SearchConfig
 
 
 @admin.register(Device)
@@ -50,5 +50,34 @@ class NetworkConfigAdmin(admin.ModelAdmin):
     list_display = ("device", "config_type", "version", "backup_timestamp", "is_active")
     list_filter = ("config_type", "is_active", "backup_timestamp")
     search_fields = ("device__ip_address", "device__hostname")
+
+
+@admin.register(SearchConfig)
+class SearchConfigAdmin(admin.ModelAdmin):
+    list_display = ("name", "is_active", "enable_hostname_search", "enable_ip_search", "enable_suggestions", "created_at")
+    list_filter = ("is_active", "enable_hostname_search", "enable_ip_search", "enable_suggestions")
+    search_fields = ("name",)
+    fieldsets = (
+        ("Basic Settings", {
+            "fields": ("name", "is_active")
+        }),
+        ("Search Options", {
+            "fields": ("enable_hostname_search", "enable_ip_search", "enable_suggestions")
+        }),
+        ("Suggestion Settings", {
+            "fields": ("min_search_length", "max_suggestions", "search_fields")
+        }),
+    )
+    
+    def get_queryset(self, request):
+        """Ensure only one active configuration at a time"""
+        return super().get_queryset(request)
+    
+    def save_model(self, request, obj, form, change):
+        """Ensure only one active configuration"""
+        if obj.is_active:
+            # Deactivate all other configurations
+            SearchConfig.objects.filter(is_active=True).exclude(id=obj.id).update(is_active=False)
+        super().save_model(request, obj, form, change)
 
 

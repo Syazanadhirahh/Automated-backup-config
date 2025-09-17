@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-from .models import Device, BackupConfig, BackupHistory, BackupArchive, NetworkConfig
+from .models import Device, BackupConfig, BackupHistory, BackupArchive, NetworkConfig, SearchConfig
 from .backup_service import backup_service
 from .forms import CustomLoginForm
 
@@ -136,6 +136,9 @@ def network_configs(request):
     """Network device configurations view"""
     devices = Device.objects.prefetch_related('configs').all()
     
+    # Get search configuration
+    search_config = SearchConfig.get_active_config()
+    
     # Calculate statistics
     total_devices = devices.count()
     online_devices = devices.filter(status='online').count()
@@ -154,6 +157,7 @@ def network_configs(request):
         'online_devices': online_devices,
         'total_configs': total_configs,
         'latest_backup': latest_backup,
+        'search_config': search_config,
     }
     return render(request, "network_scanner/network_configs.html", context)
 
@@ -245,6 +249,58 @@ def backup_status_api(request):
         })
     
     return JsonResponse({'backups': data})
+
+
+@login_required
+def search_suggestions_api(request):
+    """API endpoint for search suggestions"""
+    query = request.GET.get('q', '').strip()
+    
+    if len(query) < 2:
+        return JsonResponse({'suggestions': []})
+    
+    # Get search configuration
+    search_config = SearchConfig.get_active_config()
+    
+    if not search_config.enable_suggestions:
+        return JsonResponse({'suggestions': []})
+    
+    # Build search query based on configuration
+    from django.db.models import Q
+    
+    search_conditions = Q()
+    
+    if search_config.enable_ip_search:
+        search_conditions |= Q(ip_address__icontains=query)
+    
+    if search_config.enable_hostname_search:
+        search_conditions |= Q(hostname__icontains=query)
+    
+    # Search in additional fields if configured
+    for field in search_config.search_fields:
+        if field == 'ip_address' and search_config.enable_ip_search:
+            continue  # Already included
+        elif field == 'hostname' and search_config.enable_hostname_search:
+            continue  # Already included
+        elif field == 'description':
+            search_conditions |= Q(description__icontains=query)
+    
+    # Get matching devices
+    devices = Device.objects.filter(search_conditions).prefetch_related('configs')[:search_config.max_suggestions]
+    
+    suggestions = []
+    for device in devices:
+        config_count = device.configs.count()
+        suggestions.append({
+            'ip': device.ip_address,
+            'hostname': device.hostname or '',
+            'device_type': device.get_device_type_display(),
+            'status': device.status,
+            'config_count': config_count,
+            'description': device.description or ''
+        })
+    
+    return JsonResponse({'suggestions': suggestions})
 
 
 @login_required

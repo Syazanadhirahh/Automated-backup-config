@@ -182,3 +182,41 @@ class NetworkConfig(models.Model):
         }
 
 
+class SearchConfig(models.Model):
+    """Configuration for search functionality"""
+    name = models.CharField(max_length=100, unique=True, help_text="Configuration name")
+    enable_hostname_search = models.BooleanField(default=True, help_text="Enable hostname search functionality")
+    enable_ip_search = models.BooleanField(default=True, help_text="Enable IP address search functionality")
+    enable_suggestions = models.BooleanField(default=True, help_text="Enable search suggestions dropdown")
+    min_search_length = models.PositiveIntegerField(default=2, help_text="Minimum characters before showing suggestions")
+    max_suggestions = models.PositiveIntegerField(default=10, help_text="Maximum number of suggestions to show")
+    search_fields = models.JSONField(
+        default=list, 
+        help_text="Fields to search in (JSON array of field names)",
+        blank=True
+    )
+    is_active = models.BooleanField(default=True, help_text="Enable this search configuration")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.name} ({'Active' if self.is_active else 'Inactive'})"
+    
+    def save(self, *args, **kwargs):
+        if not self.search_fields:
+            self.search_fields = ['ip_address', 'hostname', 'description']
+        super().save(*args, **kwargs)
+    
+    @classmethod
+    def get_active_config(cls):
+        """Get the active search configuration"""
+        config = cls.objects.filter(is_active=True).first()
+        if not config:
+            # Create default configuration if none exists
+            config = cls.objects.create(
+                name="Default Search Config",
+                is_active=True
+            )
+        return config
+
+

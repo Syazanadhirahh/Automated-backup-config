@@ -19,6 +19,9 @@ urlpatterns = [
     path("backup/download/<int:backup_id>/", views.backup_download, name="backup_download"),
     path("backup/status/", views.backup_status_api, name="backup_status_api"),
     
+    # Search API URLs
+    path("search/suggestions/", views.search_suggestions_api, name="search_suggestions_api"),
+    
     # Network configuration URLs
     path("configs/", views.network_configs, name="network_configs"),
     path("configs/device/<int:device_id>/", views.device_config_detail, name="device_config_detail"),

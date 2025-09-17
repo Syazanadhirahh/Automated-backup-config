@@ -90,6 +90,31 @@ python manage.py run_backups --config "Daily Config Backup" --force
 python manage.py backup_status
 ```
 
+### Import Devices (CSV/JSON)
+```bash
+# CSV
+python manage.py import_devices devices.csv
+
+# JSON
+python manage.py import_devices devices.json
+
+# Update existing devices (matched by IP)
+python manage.py import_devices devices.csv --update
+```
+
+Accepted columns/keys:
+- `ip` or `ip_address` (required)
+- `hostname`
+- `device_type` or `type` (aliases supported)
+- `status` (online/offline)
+- `description`
+
+Device type aliases:
+- Check Point: `checkpoint`, `check point`, `cp`, `checkpoint firewall`
+- F5 BIG-IP: `f5`, `bigip`, `big-ip`, `f5 bigip`, `f5 load balancer`
+- Infoblox: `infoblox`, `nios`
+- Network: `switch`, `router`, `other`
+
 ## API Endpoints
 
 ### Backup Status API

@@ -24,13 +24,25 @@
     <h2 class="text-lg font-semibold text-slate-900 mb-4">Search & Filter Devices</h2>
     <div class="flex flex-col sm:flex-row gap-4">
       <div class="flex-1">
-        <label for="ipSearch" class="block text-sm font-medium text-slate-700 mb-2">Search by IP Address</label>
+        <label for="ipSearch" class="block text-sm font-medium text-slate-700 mb-2">
+          Search by IP Address or Hostname
+          {% if search_config.enable_hostname_search and search_config.enable_ip_search %}
+            (IP or Hostname)
+          {% elif search_config.enable_hostname_search %}
+            (Hostname)
+          {% elif search_config.enable_ip_search %}
+            (IP Address)
+          {% endif %}
+        </label>
         <div class="relative">
           <input type="text" 
                  id="ipSearch" 
-                 placeholder="Enter IP address (e.g., 192.168.1.1)" 
+                 placeholder="Enter IP address or hostname (e.g., 192.168.1.1 or server01)" 
                  class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                 onkeyup="filterDevices()">
+                 onkeyup="filterDevices()"
+                 oninput="handleSearchInput()"
+                 onfocus="handleSearchFocus()"
+                 onblur="handleSearchBlur()">
           <div class="absolute inset-y-0 right-0 flex items-center pr-3">
             <i class="ti ti-search text-slate-400"></i>
           </div>
@@ -258,6 +270,94 @@ const allDevices = [
 
 let filteredDevices = [...allDevices];
 
+// Search configuration from Django
+const searchConfig = {
+  enableHostnameSearch: {{ search_config.enable_hostname_search|yesno:"true,false" }},
+  enableIpSearch: {{ search_config.enable_ip_search|yesno:"true,false" }},
+  enableSuggestions: {{ search_config.enable_suggestions|yesno:"true,false" }},
+  minSearchLength: {{ search_config.min_search_length }},
+  maxSuggestions: {{ search_config.max_suggestions }}
+};
+
+let searchTimeout;
+let isSearchFocused = false;
+
+function handleSearchInput() {
+  const searchTerm = document.getElementById('ipSearch').value.trim();
+  
+  // Clear previous timeout
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+  }
+  
+  // Only show suggestions if enabled and search term is long enough
+  if (searchConfig.enableSuggestions && searchTerm.length >= searchConfig.minSearchLength) {
+    // Debounce the search to avoid too many API calls
+    searchTimeout = setTimeout(() => {
+      fetchSearchSuggestions(searchTerm);
+    }, 300);
+  } else {
+    document.getElementById('searchSuggestions').classList.add('hidden');
+  }
+}
+
+function handleSearchFocus() {
+  isSearchFocused = true;
+  const searchTerm = document.getElementById('ipSearch').value.trim();
+  if (searchConfig.enableSuggestions && searchTerm.length >= searchConfig.minSearchLength) {
+    fetchSearchSuggestions(searchTerm);
+  }
+}
+
+function handleSearchBlur() {
+  isSearchFocused = false;
+  // Delay hiding suggestions to allow clicking on them
+  setTimeout(() => {
+    if (!isSearchFocused) {
+      document.getElementById('searchSuggestions').classList.add('hidden');
+    }
+  }, 200);
+}
+
+async function fetchSearchSuggestions(searchTerm) {
+  try {
+    const response = await fetch(`{% url 'network_scanner:search_suggestions_api' %}?q=${encodeURIComponent(searchTerm)}`);
+    const data = await response.json();
+    
+    if (data.suggestions && data.suggestions.length > 0) {
+      showSuggestionsFromAPI(data.suggestions);
+    } else {
+      document.getElementById('searchSuggestions').classList.add('hidden');
+    }
+  } catch (error) {
+    console.error('Error fetching search suggestions:', error);
+    // Fallback to local search
+    showSuggestions(searchTerm);
+  }
+}
+
+function showSuggestionsFromAPI(suggestions) {
+  const suggestionsDiv = document.getElementById('searchSuggestions');
+  
+  if (suggestions.length === 0) {
+    suggestionsDiv.classList.add('hidden');
+    return;
+  }
+  
+  // Build suggestions HTML from API data
+  const suggestionsHTML = suggestions.map(device => `
+    <div class="px-4 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0" 
+         onclick="selectSuggestion('${device.ip}')">
+      <div class="font-medium text-slate-900">${device.ip}</div>
+      ${device.hostname ? `<div class="text-sm text-slate-500">${device.hostname}</div>` : ''}
+      <div class="text-xs text-slate-400">${device.device_type} • ${device.status} • ${device.config_count} configs</div>
+    </div>
+  `).join('');
+  
+  suggestionsDiv.innerHTML = suggestionsHTML;
+  suggestionsDiv.classList.remove('hidden');
+}
+
 function filterDevices() {
   const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
   const backupFilter = document.getElementById('backupFilter').value;
@@ -265,10 +365,20 @@ function filterDevices() {
   
   // Filter devices based on search criteria
   filteredDevices = allDevices.filter(device => {
-    // IP address search (starts with or contains)
-    const ipMatch = !ipSearch || 
-                   device.ip.toLowerCase().includes(ipSearch) ||
-                   device.hostname.toLowerCase().includes(ipSearch);
+    // Enhanced search based on configuration
+    let searchMatch = !ipSearch; // If no search term, show all
+    
+    if (ipSearch) {
+      searchMatch = false;
+      
+      if (searchConfig.enableIpSearch && device.ip.toLowerCase().includes(ipSearch)) {
+        searchMatch = true;
+      }
+      
+      if (searchConfig.enableHostnameSearch && device.hostname && device.hostname.toLowerCase().includes(ipSearch)) {
+        searchMatch = true;
+      }
+    }
     
     // Backup status filter
     const backupMatch = backupFilter === 'all' ||
@@ -278,7 +388,7 @@ function filterDevices() {
     // Status filter
     const statusMatch = statusFilter === 'all' || device.status === statusFilter;
     
-    return ipMatch && backupMatch && statusMatch;
+    return searchMatch && backupMatch && statusMatch;
   });
   
   // Show/hide devices
@@ -299,16 +409,25 @@ function filterDevices() {
 function showSuggestions(searchTerm) {
   const suggestionsDiv = document.getElementById('searchSuggestions');
   
-  if (searchTerm.length < 3) {
+  if (!searchConfig.enableSuggestions || searchTerm.length < searchConfig.minSearchLength) {
     suggestionsDiv.classList.add('hidden');
     return;
   }
   
-  // Find matching IPs
-  const matches = allDevices.filter(device => 
-    device.ip.toLowerCase().includes(searchTerm) ||
-    device.hostname.toLowerCase().includes(searchTerm)
-  ).slice(0, 5); // Limit to 5 suggestions
+  // Find matching devices based on enabled search types
+  let matches = allDevices.filter(device => {
+    let matches = false;
+    
+    if (searchConfig.enableIpSearch && device.ip.toLowerCase().includes(searchTerm)) {
+      matches = true;
+    }
+    
+    if (searchConfig.enableHostnameSearch && device.hostname && device.hostname.toLowerCase().includes(searchTerm)) {
+      matches = true;
+    }
+    
+    return matches;
+  }).slice(0, searchConfig.maxSuggestions);
   
   if (matches.length === 0) {
     suggestionsDiv.classList.add('hidden');
