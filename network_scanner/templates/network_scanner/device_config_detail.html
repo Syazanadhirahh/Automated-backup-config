@@ -141,6 +141,37 @@
     {% endif %}
   </div>
 
+  <!-- Auto Push Settings -->
+  {% if backup_configs %}
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Auto Push Settings</h2>
+    <div class="space-y-4">
+      {% for backup_config in backup_configs %}
+      <div class="flex items-center justify-between p-4 border border-slate-200 rounded-lg">
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-slate-900">{{ backup_config.name }}</h3>
+          <p class="text-xs text-slate-500">{{ backup_config.get_backup_type_display }} • {{ backup_config.get_frequency_display }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-slate-600">
+            Auto Push: 
+            <span class="font-medium {% if backup_config.auto_push_enabled %}text-green-600{% else %}text-red-600{% endif %}">
+              {% if backup_config.auto_push_enabled %}ON{% else %}OFF{% endif %}
+            </span>
+          </span>
+          <form method="post" action="{% url 'network_scanner:toggle_auto_push' backup_config.id %}" class="inline">
+            {% csrf_token %}
+            <button type="submit" class="px-3 py-1 text-xs font-medium rounded-full {% if backup_config.auto_push_enabled %}bg-red-100 text-red-700 hover:bg-red-200{% else %}bg-green-100 text-green-700 hover:bg-green-200{% endif %}">
+              {% if backup_config.auto_push_enabled %}Disable{% else %}Enable{% endif %}
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Actions -->
   <div class="bg-white rounded-xl shadow p-6">
     <h2 class="text-lg font-semibold text-slate-900 mb-4">Actions</h2>
@@ -189,8 +220,6 @@
 
 <script>
 function viewConfig(configId) {
-  // This would typically fetch the config data via AJAX
-  // For now, we'll show a placeholder
   document.getElementById('configData').textContent = `# Configuration for {{ device.ip_address }}\n# This is a placeholder - implement actual config retrieval\n# Config ID: ${configId}`;
   document.getElementById('configModal').classList.remove('hidden');
 }
