@@ -136,8 +136,24 @@ def network_configs(request):
     """Network device configurations view"""
     devices = Device.objects.prefetch_related('configs').all()
     
+    # Calculate statistics
+    total_devices = devices.count()
+    online_devices = devices.filter(status='online').count()
+    total_configs = sum(device.configs.count() for device in devices)
+    
+    # Find the most recent backup across all devices
+    latest_backup = None
+    for device in devices:
+        for config in device.configs.all():
+            if latest_backup is None or config.backup_timestamp > latest_backup:
+                latest_backup = config.backup_timestamp
+    
     context = {
         'devices': devices,
+        'total_devices': total_devices,
+        'online_devices': online_devices,
+        'total_configs': total_configs,
+        'latest_backup': latest_backup,
     }
     return render(request, "network_scanner/network_configs.html", context)
 
@@ -177,6 +193,30 @@ def backup_device_config(request, device_id):
     
     messages.success(request, f'Configuration backed up for {device.ip_address}')
     return redirect('network_scanner:device_config_detail', device_id=device_id)
+
+
+@login_required
+@require_POST
+def update_device_id(request, device_id):
+    """Update device ID (IP address)"""
+    device = get_object_or_404(Device, id=device_id)
+    new_ip = request.POST.get('new_ip', '').strip()
+    
+    if not new_ip:
+        messages.error(request, 'IP address cannot be empty')
+        return redirect('network_scanner:network_configs')
+    
+    # Check if the new IP already exists
+    if Device.objects.filter(ip_address=new_ip).exclude(id=device_id).exists():
+        messages.error(request, f'Device with IP address {new_ip} already exists')
+        return redirect('network_scanner:network_configs')
+    
+    old_ip = device.ip_address
+    device.ip_address = new_ip
+    device.save()
+    
+    messages.success(request, f'Device ID updated from {old_ip} to {new_ip}')
+    return redirect('network_scanner:network_configs')
 
 
 @login_required

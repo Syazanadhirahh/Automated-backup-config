@@ -23,6 +23,7 @@ urlpatterns = [
     path("configs/", views.network_configs, name="network_configs"),
     path("configs/device/<int:device_id>/", views.device_config_detail, name="device_config_detail"),
     path("configs/device/<int:device_id>/backup/", views.backup_device_config, name="backup_device_config"),
+    path("configs/device/<int:device_id>/update-id/", views.update_device_id, name="update_device_id"),
     
     # Device type filtering URLs
     path("device/<str:device_type>/", views.device_type_backups, name="device_type_backups"),

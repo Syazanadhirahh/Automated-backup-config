@@ -65,17 +65,42 @@
               <div class="flex-1">
                 <h3 class="font-semibold text-slate-900">{{ config.name }}</h3>
                 <p class="text-sm text-slate-500">{{ config.backup_type|title }} • {{ config.frequency|title }}</p>
-                <div class="mt-2 flex items-center gap-2">
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if config.enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
-                    {% if config.enabled %}Enabled{% else %}Disabled{% endif %}
-                  </span>
-                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if config.auto_push_enabled %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
-                    Auto Push: {% if config.auto_push_enabled %}ON{% else %}OFF{% endif %}
-                  </span>
-                  {% if config.last_backup_at %}
-                    <span class="text-xs text-slate-500">Last: {{ config.last_backup_at|date:"M d, Y H:i" }}</span>
-                  {% else %}
-                    <span class="text-xs text-slate-500">Never backed up</span>
+                <div class="mt-3 space-y-2">
+                  <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if config.enabled %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                      <i class="ti ti-{% if config.enabled %}check-circle{% else %}pause-circle{% endif %} mr-1"></i>
+                      {% if config.enabled %}Active{% else %}Disabled{% endif %}
+                    </span>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {% if config.auto_push_enabled %}bg-blue-100 text-blue-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+                      <i class="ti ti-{% if config.auto_push_enabled %}cloud-upload{% else %}cloud-off{% endif %} mr-1"></i>
+                      Auto Push: {% if config.auto_push_enabled %}ON{% else %}OFF{% endif %}
+                    </span>
+                  </div>
+                  
+                  <div class="flex items-center gap-2">
+                    <div class="flex items-center text-xs text-slate-600">
+                      <i class="ti ti-clock mr-1"></i>
+                      <span class="font-medium">Last Backup:</span>
+                    </div>
+                    {% if config.last_backup_at %}
+                      <span class="text-xs font-medium text-slate-900">{{ config.last_backup_at|date:"M d, Y" }}</span>
+                      <span class="text-xs text-slate-500">at {{ config.last_backup_at|date:"H:i" }}</span>
+                      <span class="text-xs text-slate-400">({{ config.last_backup_at|timesince }} ago)</span>
+                    {% else %}
+                      <span class="text-xs font-medium text-red-600">Never backed up</span>
+                    {% endif %}
+                  </div>
+                  
+                  {% if config.next_backup_at %}
+                  <div class="flex items-center gap-2">
+                    <div class="flex items-center text-xs text-slate-600">
+                      <i class="ti ti-calendar mr-1"></i>
+                      <span class="font-medium">Next Backup:</span>
+                    </div>
+                    <span class="text-xs font-medium text-slate-900">{{ config.next_backup_at|date:"M d, Y" }}</span>
+                    <span class="text-xs text-slate-500">at {{ config.next_backup_at|date:"H:i" }}</span>
+                    <span class="text-xs text-slate-400">(in {{ config.next_backup_at|timeuntil }})</span>
+                  </div>
                   {% endif %}
                 </div>
               </div>
@@ -177,10 +202,10 @@
     {% endif %}
   </div>
 
-  <!-- Backup Status Summary -->
+  <!-- Configuration Statistics -->
   <div class="bg-white rounded-xl shadow p-6">
-    <h2 class="text-lg font-semibold text-slate-900 mb-4">Backup Status Summary</h2>
-    <div id="backup-status" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <h2 class="text-lg font-semibold text-slate-900 mb-6">Configuration Statistics</h2>
+    <div id="backup-status" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       <!-- Status will be loaded via JavaScript -->
     </div>
   </div>
@@ -204,25 +229,102 @@ function updateStatusDisplay(backups) {
 
   const total = backups.length;
   const enabled = backups.filter(b => b.enabled).length;
+  const disabled = total - enabled;
   const due = backups.filter(b => b.is_due && b.enabled).length;
+  const autoPushEnabled = backups.filter(b => b.auto_push_enabled).length;
   const recent = backups.filter(b => b.last_backup && new Date(b.last_backup) > new Date(Date.now() - 24 * 60 * 60 * 1000)).length;
+  const neverBackedUp = backups.filter(b => !b.last_backup).length;
 
   statusContainer.innerHTML = `
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">${total}</div>
-      <div class="text-sm text-yellow-600">Total Configs</div>
+    <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-blue-600">${total}</div>
+          <div class="text-sm font-medium text-blue-700">Total Configurations</div>
+          <div class="text-xs text-blue-600 mt-1">All backup configs</div>
+        </div>
+        <div class="text-blue-400">
+          <i class="ti ti-database text-3xl"></i>
+        </div>
+      </div>
     </div>
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">${enabled}</div>
-      <div class="text-sm text-yellow-600">Enabled</div>
+    
+    <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-green-600">${enabled}</div>
+          <div class="text-sm font-medium text-green-700">Active Configs</div>
+          <div class="text-xs text-green-600 mt-1">${Math.round((enabled/total)*100)}% of total</div>
+        </div>
+        <div class="text-green-400">
+          <i class="ti ti-check-circle text-3xl"></i>
+        </div>
+      </div>
     </div>
-    <div class="bg-${due > 0 ? 'red' : 'yellow'}-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-${due > 0 ? 'red' : 'yellow'}-600">${due}</div>
-      <div class="text-sm text-${due > 0 ? 'red' : 'yellow'}-600">Due</div>
+    
+    <div class="bg-gradient-to-br from-${due > 0 ? 'red' : 'yellow'}-50 to-${due > 0 ? 'red' : 'yellow'}-100 p-6 rounded-xl border border-${due > 0 ? 'red' : 'yellow'}-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-${due > 0 ? 'red' : 'yellow'}-600">${due}</div>
+          <div class="text-sm font-medium text-${due > 0 ? 'red' : 'yellow'}-700">Due for Backup</div>
+          <div class="text-xs text-${due > 0 ? 'red' : 'yellow'}-600 mt-1">${due > 0 ? 'Needs attention' : 'All up to date'}</div>
+        </div>
+        <div class="text-${due > 0 ? 'red' : 'yellow'}-400">
+          <i class="ti ti-${due > 0 ? 'alert-triangle' : 'clock'} text-3xl"></i>
+        </div>
+      </div>
     </div>
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">${recent}</div>
-      <div class="text-sm text-yellow-600">Recent (24h)</div>
+    
+    <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-purple-600">${autoPushEnabled}</div>
+          <div class="text-sm font-medium text-purple-700">Auto Push Enabled</div>
+          <div class="text-xs text-purple-600 mt-1">${Math.round((autoPushEnabled/total)*100)}% of total</div>
+        </div>
+        <div class="text-purple-400">
+          <i class="ti ti-cloud-upload text-3xl"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-orange-600">${recent}</div>
+          <div class="text-sm font-medium text-orange-700">Recent Backups</div>
+          <div class="text-xs text-orange-600 mt-1">Last 24 hours</div>
+        </div>
+        <div class="text-orange-400">
+          <i class="ti ti-history text-3xl"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-gray-600">${neverBackedUp}</div>
+          <div class="text-sm font-medium text-gray-700">Never Backed Up</div>
+          <div class="text-xs text-gray-600 mt-1">${neverBackedUp > 0 ? 'Needs first backup' : 'All have backups'}</div>
+        </div>
+        <div class="text-gray-400">
+          <i class="ti ti-${neverBackedUp > 0 ? 'alert-circle' : 'shield-check'} text-3xl"></i>
+        </div>
+      </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-6 rounded-xl border border-indigo-200">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="text-3xl font-bold text-indigo-600">${disabled}</div>
+          <div class="text-sm font-medium text-indigo-700">Disabled Configs</div>
+          <div class="text-xs text-indigo-600 mt-1">${Math.round((disabled/total)*100)}% of total</div>
+        </div>
+        <div class="text-indigo-400">
+          <i class="ti ti-pause-circle text-3xl"></i>
+        </div>
+      </div>
     </div>
   `;
 }

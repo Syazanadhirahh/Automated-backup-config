@@ -19,57 +19,57 @@
           <img src="{% static 'network_scanner/etiqa logo.png' %}" alt="Etiqa Logo" class="h-5 w-auto">
           <span class="text-lg sm:text-xl font-semibold text-slate-900">Network Discovery</span>
         </div>
-        <div class="hidden sm:flex items-center gap-4 text-sm text-yellow-600">
-          <a href="{% url 'network_scanner:backup_dashboard' %}" class="hover:text-yellow-900">Dashboard</a>
-          <a href="{% url 'network_scanner:network_configs' %}" class="hover:text-yellow-900">Configs</a>
-          <a href="{% url 'network_scanner:backup_history_public' %}" class="hover:text-yellow-900">Backup History</a>
+        <div class="hidden sm:flex items-center gap-4 text-sm text-slate-600">
+          <a href="{% url 'network_scanner:backup_dashboard' %}" class="hover:text-slate-900">Dashboard</a>
+          <a href="{% url 'network_scanner:network_configs' %}" class="hover:text-slate-900">Configs</a>
+          <a href="{% url 'network_scanner:backup_history_public' %}" class="hover:text-slate-900">Backup History</a>
           
           <!-- Device Dropdown Menu -->
           <div class="relative group">
-            <button class="hover:text-yellow-900 flex items-center gap-1">
+            <button class="hover:text-slate-900 flex items-center gap-1">
               Device
               <i class="ti ti-chevron-down text-xs transition-transform group-hover:rotate-180"></i>
             </button>
             <div class="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <div class="py-2">
-                <a href="{% url 'network_scanner:device_type_backups' 'firewall' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-shield text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'firewall' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-shield text-slate-500"></i>
                   <span>Checkpoint Firewall</span>
                 </a>
-                <a href="{% url 'network_scanner:device_type_backups' 'f5' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-server text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'f5' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-server text-slate-500"></i>
                   <span>F5 Load Balancer</span>
                 </a>
-                <a href="{% url 'network_scanner:device_type_backups' 'infoblox' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-dns text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'infoblox' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-dns text-slate-500"></i>
                   <span>Infoblox DNS/DHCP</span>
                 </a>
                 <div class="border-t border-slate-200 my-1"></div>
-                <a href="{% url 'network_scanner:device_type_backups' 'switch' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-router text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'switch' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-router text-slate-500"></i>
                   <span>Network Switch</span>
                 </a>
-                <a href="{% url 'network_scanner:device_type_backups' 'router' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-route text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'router' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-route text-slate-500"></i>
                   <span>Router</span>
                 </a>
-                <a href="{% url 'network_scanner:device_type_backups' 'other' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-yellow-50 hover:text-yellow-700 transition">
-                  <i class="ti ti-device-desktop text-yellow-500"></i>
+                <a href="{% url 'network_scanner:device_type_backups' 'other' %}" class="flex items-center gap-3 px-4 py-2 text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition">
+                  <i class="ti ti-device-desktop text-slate-500"></i>
                   <span>Other Devices</span>
                 </a>
               </div>
             </div>
           </div>
           {% if user.is_authenticated %}
-            <div class="flex items-center gap-2 pl-4 border-l border-yellow-300">
+            <div class="flex items-center gap-2 pl-4 border-l border-slate-300">
               <span class="text-slate-600">Welcome, <strong>{{ user.username }}</strong></span>
-              <a href="{% url 'network_scanner:logout' %}" class="hover:text-yellow-900 flex items-center gap-1">
+              <a href="{% url 'network_scanner:logout' %}" class="hover:text-slate-900 flex items-center gap-1">
                 <i class="ti ti-logout"></i>
                 Logout
               </a>
             </div>
           {% else %}
-            <a href="{% url 'network_scanner:login' %}" class="hover:text-yellow-900 flex items-center gap-1">
+            <a href="{% url 'network_scanner:login' %}" class="hover:text-slate-900 flex items-center gap-1">
               <i class="ti ti-login"></i>
               Login
             </a>
@@ -103,11 +103,11 @@
     </main>
 
     <footer class="border-t bg-white">
-      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 text-sm text-yellow-600 flex items-center justify-between">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-6 text-sm text-slate-600 flex items-center justify-between">
         <p>&copy; <span id="year"></span> Etiqa. All rights reserved.</p>
         <div class="flex items-center gap-3">
-          <span class="inline-flex items-center gap-1"><i class="ti ti-shield-check text-yellow-500"></i> Secure</span>
-          <span class="inline-flex items-center gap-1"><i class="ti ti-wifi text-yellow-500"></i> Network Tools</span>
+          <span class="inline-flex items-center gap-1"><i class="ti ti-shield-check text-slate-500"></i> Secure</span>
+          <span class="inline-flex items-center gap-1"><i class="ti ti-wifi text-slate-500"></i> Network Tools</span>
         </div>
       </div>
     </footer>

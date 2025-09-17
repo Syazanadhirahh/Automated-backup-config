@@ -3,9 +3,9 @@
 
 {% block content %}
 <section class="space-y-6">
-  <div class="bg-gradient-to-r from-yellow-400 to-yellow-300 rounded-xl p-6 sm:p-8 text-black shadow">
+  <div class="bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl p-6 sm:p-8 text-white shadow">
     <h1 class="text-2xl sm:text-3xl font-bold">Network Configurations</h1>
-    <p class="mt-2 text-yellow-800">Manage and backup device configurations</p>
+    <p class="mt-2 text-slate-200">Manage and backup device configurations</p>
   </div>
 
   <!-- Messages -->
@@ -19,26 +19,78 @@
     </div>
   {% endif %}
 
+  <!-- Search and Filters -->
+  <div class="bg-white rounded-xl shadow p-6">
+    <h2 class="text-lg font-semibold text-slate-900 mb-4">Search & Filter Devices</h2>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <div class="flex-1">
+        <label for="ipSearch" class="block text-sm font-medium text-slate-700 mb-2">Search by IP Address</label>
+        <div class="relative">
+          <input type="text" 
+                 id="ipSearch" 
+                 placeholder="Enter IP address (e.g., 192.168.1.1)" 
+                 class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                 onkeyup="filterDevices()">
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+            <i class="ti ti-search text-slate-400"></i>
+          </div>
+        </div>
+        <!-- Search suggestions dropdown -->
+        <div id="searchSuggestions" class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg hidden max-h-60 overflow-y-auto">
+          <!-- Suggestions will be populated by JavaScript -->
+        </div>
+      </div>
+      <div class="sm:w-48">
+        <label for="backupFilter" class="block text-sm font-medium text-slate-700 mb-2">Filter by Backup Status</label>
+        <select id="backupFilter" 
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onchange="filterDevices()">
+          <option value="all">All Devices</option>
+          <option value="with_backups">With Backups</option>
+          <option value="without_backups">Without Backups</option>
+        </select>
+      </div>
+      <div class="sm:w-32">
+        <label for="statusFilter" class="block text-sm font-medium text-slate-700 mb-2">Status</label>
+        <select id="statusFilter" 
+                class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onchange="filterDevices()">
+          <option value="all">All</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-4 flex items-center justify-between">
+      <div class="text-sm text-slate-600">
+        Showing <span id="deviceCount">{{ devices.count }}</span> of {{ total_devices }} devices
+      </div>
+      <button onclick="clearFilters()" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+        Clear Filters
+      </button>
+    </div>
+  </div>
+
   <!-- Quick Actions -->
   <div class="bg-white rounded-xl shadow p-6">
     <h2 class="text-lg font-semibold text-slate-900 mb-4">Quick Actions</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <button onclick="backupAllDevices()" class="flex items-center justify-center p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-400 hover:bg-yellow-50 transition">
+      <button onclick="backupAllDevices()" class="flex items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition">
         <div class="text-center">
-          <i class="ti ti-device-floppy text-2xl text-yellow-400 mb-2"></i>
-          <div class="text-sm font-medium text-yellow-600">Backup All Devices</div>
+          <i class="ti ti-device-floppy text-2xl text-slate-500 mb-2"></i>
+          <div class="text-sm font-medium text-slate-600">Backup All Devices</div>
         </div>
       </button>
-      <a href="{% url 'network_scanner:backup_dashboard' %}" class="flex items-center justify-center p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-400 hover:bg-yellow-50 transition">
+      <a href="{% url 'network_scanner:backup_dashboard' %}" class="flex items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition">
         <div class="text-center">
-          <i class="ti ti-settings text-2xl text-yellow-400 mb-2"></i>
-          <div class="text-sm font-medium text-yellow-600">Backup Settings</div>
+          <i class="ti ti-settings text-2xl text-slate-500 mb-2"></i>
+          <div class="text-sm font-medium text-slate-600">Backup Settings</div>
         </div>
       </a>
-      <button onclick="refreshDevices()" class="flex items-center justify-center p-4 border-2 border-dashed border-yellow-300 rounded-lg hover:border-yellow-400 hover:bg-yellow-50 transition">
+      <button onclick="refreshDevices()" class="flex items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:border-slate-400 hover:bg-slate-50 transition">
         <div class="text-center">
-          <i class="ti ti-refresh text-2xl text-yellow-400 mb-2"></i>
-          <div class="text-sm font-medium text-yellow-600">Refresh</div>
+          <i class="ti ti-refresh text-2xl text-slate-500 mb-2"></i>
+          <div class="text-sm font-medium text-slate-600">Refresh</div>
         </div>
       </button>
     </div>
@@ -48,16 +100,21 @@
   <div class="bg-white rounded-xl shadow p-6">
     <div class="flex items-center justify-between mb-4">
       <h2 class="text-lg font-semibold text-slate-900">Device Configurations</h2>
-      <a href="{% url 'admin:network_scanner_device_changelist' %}" class="text-yellow-500 hover:text-yellow-600 text-sm">Manage Devices</a>
+      <a href="{% url 'admin:network_scanner_device_changelist' %}" class="text-blue-500 hover:text-blue-600 text-sm">Manage Devices</a>
     </div>
     
     {% if devices %}
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {% for device in devices %}
-          <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition">
+          <div class="border border-slate-200 rounded-lg p-4 hover:shadow-md transition" data-device-id="{{ device.id }}">
             <div class="flex items-start justify-between">
               <div class="flex-1">
-                <h3 class="font-semibold text-slate-900">{{ device.ip_address }}</h3>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-semibold text-slate-900" id="device-ip-{{ device.id }}">{{ device.ip_address }}</h3>
+                  <button onclick="editDeviceId({{ device.id }})" class="text-blue-500 hover:text-blue-600 text-sm" title="Edit IP Address">
+                    <i class="ti ti-edit"></i>
+                  </button>
+                </div>
                 {% if device.hostname %}
                   <p class="text-sm text-slate-500">{{ device.hostname }}</p>
                 {% endif %}
@@ -70,13 +127,13 @@
                   </span>
                   {% if device.last_scanned_at %}
                     <span class="text-xs text-slate-500">
-                      Last seen: {{ device.last_scanned_at|date:"M d, H:i" }}
+                      Last seen: {{ device.last_scanned_at|date:"d, H:i" }}
                     </span>
                   {% endif %}
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <a href="{% url 'network_scanner:device_config_detail' device.id %}" class="text-yellow-500 hover:text-yellow-600">
+                <a href="{% url 'network_scanner:device_config_detail' device.id %}" class="text-blue-500 hover:text-blue-600">
                   <i class="ti ti-eye"></i>
                 </a>
                 <form method="post" action="{% url 'network_scanner:backup_device_config' device.id %}" class="inline">
@@ -96,7 +153,7 @@
                   {% for config in device.configs.all|slice:":3" %}
                     <div class="flex items-center justify-between text-xs">
                       <span class="text-slate-600">{{ config.config_type }}</span>
-                      <span class="text-slate-400">{{ config.backup_timestamp|date:"M d, H:i" }}</span>
+                      <span class="text-slate-400">{{ config.backup_timestamp|date:"d, H:i" }}</span>
                     </div>
                   {% endfor %}
                   {% if device.configs.count > 3 %}
@@ -121,33 +178,171 @@
 
   <!-- Configuration Statistics -->
   <div class="bg-white rounded-xl shadow p-6">
-    <h2 class="text-lg font-semibold text-slate-900 mb-4">Configuration Statistics</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">{{ devices.count }}</div>
-      <div class="text-sm text-yellow-600">Total Devices</div>
-    </div>
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">{{ devices|length }}</div>
-      <div class="text-sm text-yellow-600">Online Devices</div>
-    </div>
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">
-        {% for device in devices %}{{ device.configs.count }}{% if not forloop.last %}+{% endif %}{% empty %}0{% endfor %}
+    <h2 class="text-lg font-semibold text-slate-900 mb-6">Configuration Statistics</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-xl border border-blue-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold text-blue-600">{{ total_devices }}</div>
+            <div class="text-sm font-medium text-blue-700">Total Devices</div>
+            <div class="text-xs text-blue-600 mt-1">All registered devices</div>
+          </div>
+          <div class="text-blue-400">
+            <i class="ti ti-devices text-3xl"></i>
+          </div>
+        </div>
       </div>
-      <div class="text-sm text-yellow-600">Total Configs</div>
-    </div>
-    <div class="bg-yellow-50 p-4 rounded-lg">
-      <div class="text-2xl font-bold text-yellow-600">
-        {% for device in devices %}{% if device.configs.exists %}{{ device.configs.first.backup_timestamp|date:"Y-m-d" }}{% endif %}{% empty %}Never{% endfor %}
+      
+      <div class="bg-gradient-to-br from-green-50 to-green-100 p-6 rounded-xl border border-green-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold text-green-600">{{ online_devices }}</div>
+            <div class="text-sm font-medium text-green-700">Online Devices</div>
+            <div class="text-xs text-green-600 mt-1">{{ online_devices }}/{{ total_devices }} active</div>
+          </div>
+          <div class="text-green-400">
+            <i class="ti ti-wifi text-3xl"></i>
+          </div>
+        </div>
       </div>
-      <div class="text-sm text-yellow-600">Last Backup</div>
-    </div>
+      
+      <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-xl border border-purple-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold text-purple-600">{{ total_configs }}</div>
+            <div class="text-sm font-medium text-purple-700">Total Configurations</div>
+            <div class="text-xs text-purple-600 mt-1">All saved configs</div>
+          </div>
+          <div class="text-purple-400">
+            <i class="ti ti-database text-3xl"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-6 rounded-xl border border-orange-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="text-3xl font-bold text-orange-600">
+              {% if latest_backup %}{{ latest_backup|date:"d" }}{% else %}Never{% endif %}
+            </div>
+            <div class="text-sm font-medium text-orange-700">Last Backup</div>
+            <div class="text-xs text-orange-600 mt-1">
+              {% if latest_backup %}{{ latest_backup|timesince }} ago{% else %}No backups{% endif %}
+            </div>
+          </div>
+          <div class="text-orange-400">
+            <i class="ti ti-clock text-3xl"></i>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>
 
 <script>
+// Store all devices data for filtering
+const allDevices = [
+  {% for device in devices %}
+  {
+    id: {{ device.id }},
+    ip: "{{ device.ip_address }}",
+    hostname: "{{ device.hostname|default:'' }}",
+    status: "{{ device.status }}",
+    configCount: {{ device.configs.count }},
+    hasBackups: {{ device.configs.exists|yesno:"true,false" }},
+    lastSeen: "{{ device.last_scanned_at|date:'d, H:i'|default:'Never' }}",
+    element: document.querySelector('[data-device-id="{{ device.id }}"]')
+  }{% if not forloop.last %},{% endif %}
+  {% endfor %}
+];
+
+let filteredDevices = [...allDevices];
+
+function filterDevices() {
+  const ipSearch = document.getElementById('ipSearch').value.toLowerCase();
+  const backupFilter = document.getElementById('backupFilter').value;
+  const statusFilter = document.getElementById('statusFilter').value;
+  
+  // Filter devices based on search criteria
+  filteredDevices = allDevices.filter(device => {
+    // IP address search (starts with or contains)
+    const ipMatch = !ipSearch || 
+                   device.ip.toLowerCase().includes(ipSearch) ||
+                   device.hostname.toLowerCase().includes(ipSearch);
+    
+    // Backup status filter
+    const backupMatch = backupFilter === 'all' ||
+                       (backupFilter === 'with_backups' && device.hasBackups) ||
+                       (backupFilter === 'without_backups' && !device.hasBackups);
+    
+    // Status filter
+    const statusMatch = statusFilter === 'all' || device.status === statusFilter;
+    
+    return ipMatch && backupMatch && statusMatch;
+  });
+  
+  // Show/hide devices
+  allDevices.forEach(device => {
+    const isVisible = filteredDevices.includes(device);
+    if (device.element) {
+      device.element.style.display = isVisible ? 'block' : 'none';
+    }
+  });
+  
+  // Update device count
+  document.getElementById('deviceCount').textContent = filteredDevices.length;
+  
+  // Show/hide suggestions
+  showSuggestions(ipSearch);
+}
+
+function showSuggestions(searchTerm) {
+  const suggestionsDiv = document.getElementById('searchSuggestions');
+  
+  if (searchTerm.length < 3) {
+    suggestionsDiv.classList.add('hidden');
+    return;
+  }
+  
+  // Find matching IPs
+  const matches = allDevices.filter(device => 
+    device.ip.toLowerCase().includes(searchTerm) ||
+    device.hostname.toLowerCase().includes(searchTerm)
+  ).slice(0, 5); // Limit to 5 suggestions
+  
+  if (matches.length === 0) {
+    suggestionsDiv.classList.add('hidden');
+    return;
+  }
+  
+  // Build suggestions HTML
+  const suggestionsHTML = matches.map(device => `
+    <div class="px-4 py-2 hover:bg-slate-50 cursor-pointer border-b border-slate-100 last:border-b-0" 
+         onclick="selectSuggestion('${device.ip}')">
+      <div class="font-medium text-slate-900">${device.ip}</div>
+      ${device.hostname ? `<div class="text-sm text-slate-500">${device.hostname}</div>` : ''}
+      <div class="text-xs text-slate-400">${device.status} • ${device.configCount} configs</div>
+    </div>
+  `).join('');
+  
+  suggestionsDiv.innerHTML = suggestionsHTML;
+  suggestionsDiv.classList.remove('hidden');
+}
+
+function selectSuggestion(ip) {
+  document.getElementById('ipSearch').value = ip;
+  document.getElementById('searchSuggestions').classList.add('hidden');
+  filterDevices();
+}
+
+function clearFilters() {
+  document.getElementById('ipSearch').value = '';
+  document.getElementById('backupFilter').value = 'all';
+  document.getElementById('statusFilter').value = 'all';
+  document.getElementById('searchSuggestions').classList.add('hidden');
+  filterDevices();
+}
+
 function backupAllDevices() {
   if (confirm('Backup configurations for all devices?')) {
     // This would typically make an API call to backup all devices
@@ -155,9 +350,152 @@ function backupAllDevices() {
   }
 }
 
-
 function refreshDevices() {
   location.reload();
 }
+
+function editDeviceId(deviceId) {
+  const ipElement = document.getElementById(`device-ip-${deviceId}`);
+  const currentIp = ipElement.textContent;
+  
+  // Create input field
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = currentIp;
+  input.className = 'px-2 py-1 border border-slate-300 rounded text-sm font-semibold text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+  input.style.minWidth = '120px';
+  
+  // Create save and cancel buttons
+  const saveBtn = document.createElement('button');
+  saveBtn.innerHTML = '<i class="ti ti-check"></i>';
+  saveBtn.className = 'text-green-500 hover:text-green-600 text-sm ml-1';
+  saveBtn.title = 'Save';
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.innerHTML = '<i class="ti ti-x"></i>';
+  cancelBtn.className = 'text-red-500 hover:text-red-600 text-sm ml-1';
+  cancelBtn.title = 'Cancel';
+  
+  // Replace the IP display with input and buttons
+  const container = document.createElement('div');
+  container.className = 'flex items-center gap-1';
+  container.appendChild(input);
+  container.appendChild(saveBtn);
+  container.appendChild(cancelBtn);
+  
+  ipElement.parentNode.replaceChild(container, ipElement);
+  
+  // Focus on input
+  input.focus();
+  input.select();
+  
+  // Save function
+  const saveChanges = () => {
+    const newIp = input.value.trim();
+    if (newIp === currentIp) {
+      // No changes, just restore
+      restoreDisplay();
+      return;
+    }
+    
+    if (!newIp) {
+      alert('IP address cannot be empty');
+      return;
+    }
+    
+    // Validate IP format (basic validation)
+    const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    if (!ipRegex.test(newIp)) {
+      alert('Please enter a valid IP address');
+      return;
+    }
+    
+    // Submit the form
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/configs/device/${deviceId}/update-id/`;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    
+    const ipInput = document.createElement('input');
+    ipInput.type = 'hidden';
+    ipInput.name = 'new_ip';
+    ipInput.value = newIp;
+    
+    form.appendChild(csrfInput);
+    form.appendChild(ipInput);
+    document.body.appendChild(form);
+    form.submit();
+  };
+  
+  // Cancel function
+  const restoreDisplay = () => {
+    const newIpElement = document.createElement('h3');
+    newIpElement.className = 'font-semibold text-slate-900';
+    newIpElement.id = `device-ip-${deviceId}`;
+    newIpElement.textContent = currentIp;
+    
+    const editBtn = document.createElement('button');
+    editBtn.onclick = () => editDeviceId(deviceId);
+    editBtn.className = 'text-blue-500 hover:text-blue-600 text-sm';
+    editBtn.title = 'Edit IP Address';
+    editBtn.innerHTML = '<i class="ti ti-edit"></i>';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex items-center gap-2';
+    wrapper.appendChild(newIpElement);
+    wrapper.appendChild(editBtn);
+    
+    container.parentNode.replaceChild(wrapper, container);
+  };
+  
+  // Event listeners
+  saveBtn.onclick = saveChanges;
+  cancelBtn.onclick = restoreDisplay;
+  
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      saveChanges();
+    } else if (e.key === 'Escape') {
+      restoreDisplay();
+    }
+  });
+  
+  // Click outside to cancel
+  const clickOutside = (e) => {
+    if (!container.contains(e.target)) {
+      restoreDisplay();
+      document.removeEventListener('click', clickOutside);
+    }
+  };
+  
+  setTimeout(() => {
+    document.addEventListener('click', clickOutside);
+  }, 100);
+}
+
+// Hide suggestions when clicking outside
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#ipSearch') && !e.target.closest('#searchSuggestions')) {
+    document.getElementById('searchSuggestions').classList.add('hidden');
+  }
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Add data attributes to device elements for filtering
+  const deviceElements = document.querySelectorAll('[data-device-id]');
+  deviceElements.forEach(element => {
+    const deviceId = parseInt(element.getAttribute('data-device-id'));
+    const device = allDevices.find(d => d.id === deviceId);
+    if (device) {
+      device.element = element;
+    }
+  });
+});
 </script>
 {% endblock %}
