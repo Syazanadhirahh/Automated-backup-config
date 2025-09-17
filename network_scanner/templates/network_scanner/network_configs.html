@@ -604,9 +604,7 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-  // Add data attributes to device elements for filtering
   const deviceElements = document.querySelectorAll('[data-device-id]');
   deviceElements.forEach(element => {
     const deviceId = parseInt(element.getAttribute('data-device-id'));
