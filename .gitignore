@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual envs
+.venv/
+venv/
+ENV/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Django
+*.log
+*.pot
+*.py,cover
+local_settings.py
+
+# SQLite / DB
+*.sqlite3
+/db.sqlite3
+
+# Build/dist
+build/
+dist/
+.eggs/
+*.egg-info/
+.wheels/
+
+# Testing/cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Static/media (optional — keep if generated)
+staticfiles/
+media/
+
+# Backups
+backups/
+
+# Byte-compiled and caches inside app folders
+network_scanner/__pycache__/
+network_scanner/migrations/__pycache__/
